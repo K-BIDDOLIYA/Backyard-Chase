@@ -160,7 +160,7 @@ public class PlayerCassette : MonoBehaviour
     {
         cassetteProtected = true;
 
-        yield return new WaitForSeconds(10f);
+        yield return new WaitForSeconds(5f);
 
         cassetteProtected = false;
 

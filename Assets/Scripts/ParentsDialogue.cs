@@ -21,6 +21,14 @@ public class ParentsDialogue : MonoBehaviour
         if (!other.CompareTag("Player"))
             return;
 
+        PlayerCassette cassette = other.GetComponent<PlayerCassette>();
+
+        if (cassette == null)
+            return;
+
+        if (!cassette.HasCassette)
+            return;
+
         triggered = true;
         StartCoroutine(PlayDialogue());
     }
@@ -46,5 +54,8 @@ public class ParentsDialogue : MonoBehaviour
 
         if (winPanel != null)
             winPanel.SetActive(true);
+
+        if (UIManager.Instance != null)
+            UIManager.Instance.GameWon();
     }
 }
