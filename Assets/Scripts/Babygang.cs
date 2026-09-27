@@ -41,9 +41,15 @@ public class BabyGang : MonoBehaviour
     private float currentCurveStrength;
     private float nextCurveChange;
 
+    private Animator animator;
+    private SpriteRenderer spriteRenderer;
+
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
+
+        animator = GetComponent<Animator>();
+        spriteRenderer = GetComponent<SpriteRenderer>();
 
         ChooseNewCurve();
 
@@ -79,6 +85,7 @@ public class BabyGang : MonoBehaviour
         if (player == null)
         {
             rb.linearVelocity = Vector2.zero;
+            UpdateBossAnimation();
             return;
         }
 
@@ -102,6 +109,8 @@ public class BabyGang : MonoBehaviour
         {
             ChasePlayer();
         }
+
+        UpdateBossAnimation();
     }
 
     private void ChooseNewCurve()
@@ -178,24 +187,7 @@ public class BabyGang : MonoBehaviour
 
     private void RotateTowardsDirection(Vector2 direction)
     {
-        if (!rotateBaby ||
-            direction.sqrMagnitude < 0.01f)
-        {
-            return;
-        }
-
-        float angle =
-            Mathf.Atan2(
-                direction.y,
-                direction.x
-            ) * Mathf.Rad2Deg;
-
-        transform.rotation =
-            Quaternion.Euler(
-                0f,
-                0f,
-                angle
-            );
+        return;
     }
 
     private void OnCollisionEnter2D(
@@ -211,16 +203,12 @@ public class BabyGang : MonoBehaviour
         if (playerCassette == null)
             return;
 
-        // PLAYER TAKES CASSETTE BACK
-        // Only this baby can give it back if
-        // THIS baby currently has it.
         if (hasCassette)
         {
             ReturnCassetteToPlayer(playerCassette);
             return;
         }
 
-        // Otherwise this baby tries to steal it.
         TryTakeCassette(playerCassette);
     }
 
@@ -257,21 +245,62 @@ public class BabyGang : MonoBehaviour
     private void ReturnCassetteToPlayer(
         PlayerCassette playerCassette)
     {
-        // Baby loses cassette.
         hasCassette = false;
 
         if (cassette != null)
         {
             cassette.SetActive(false);
         }
-
-        // Player gets it back.
         playerCassette.GetCassetteBack();
 
         Debug.Log(
             gameObject.name +
             " lost the cassette to the player!"
         );
+    }
+
+    private void UpdateBossAnimation()
+    {
+        if (animator == null || rb == null)
+            return;
+
+        Vector2 velocity = rb.linearVelocity;
+
+        int direction = 0;
+
+        if (velocity.sqrMagnitude < 0.01f)
+        {
+            direction = 0;
+        }
+        else if (Mathf.Abs(velocity.x) > Mathf.Abs(velocity.y))
+        {
+            direction = 3; 
+
+            if (spriteRenderer != null)
+            {
+                if (velocity.x < 0f)
+                {
+                    spriteRenderer.flipX = false;
+                }
+                else
+                {
+                    spriteRenderer.flipX = true;
+                }
+            }
+        }
+        else
+        {
+            if (velocity.y > 0f)
+            {
+                direction = 1; 
+            }
+            else
+            {
+                direction = 2; 
+            }
+        }
+
+        animator.SetInteger("BossMovement", direction);
     }
 }
 

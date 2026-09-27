@@ -1,128 +1,103 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.UI;
+using TMPro;
 
 public class DoorInteraction : MonoBehaviour
 {
-    [Header("Interaction")]
     [SerializeField] private float interactionTime = 2f;
+    [SerializeField] private TMP_Text countdownText;
+    [SerializeField] private Transform circle;
 
-    [Header("Interaction Range")]
-    [SerializeField] private float interactionRange = 1.5f;
-
-    [Header("Progress UI")]
-    [SerializeField] private Image progressCircle;
-
-    [Header("Door")]
-    [SerializeField] private GameObject doorVisual;
-    [SerializeField] private Collider2D doorCollider;
-
-    private Transform player;
-    private bool doorOpened = false;
-
-    private float interactionProgress = 0f;
+    private bool playerInside;
+    private float timer;
+    private bool opened;
 
     private void Start()
     {
-        GameObject playerObject =
-            GameObject.FindGameObjectWithTag("Player");
-
-        if (playerObject != null)
+        if (countdownText != null)
         {
-            player = playerObject.transform;
-        }
-
-        if (progressCircle != null)
-        {
-            progressCircle.fillAmount = 0f;
-            progressCircle.gameObject.SetActive(false);
+            countdownText.gameObject.SetActive(false);
+            countdownText.text = "";
         }
     }
 
     private void Update()
     {
-        if (doorOpened || player == null)
+        if (!playerInside || opened)
             return;
-
-        float distance =
-            Vector2.Distance(
-                transform.position,
-                player.position
-            );
-
-        bool playerNearby =
-            distance <= interactionRange;
-
-        if (!playerNearby)
-        {
-            ResetInteraction();
-            return;
-        }
 
         if (Keyboard.current != null &&
-            Keyboard.current.eKey.isPressed)
+            Keyboard.current.spaceKey.isPressed)
         {
-            HoldDoor();
+            timer += Time.deltaTime;
+
+            if (countdownText != null)
+            {
+                countdownText.gameObject.SetActive(true);
+
+                float remaining = Mathf.Max(
+                    0f,
+                    interactionTime - timer
+                );
+
+                countdownText.text = remaining.ToString("0.0");
+            }
+
+            if (timer >= interactionTime)
+            {
+                OpenDoor();
+            }
         }
         else
         {
-            ResetInteraction();
-        }
-    }
+            timer = 0f;
 
-    private void HoldDoor()
-    {
-        interactionProgress +=
-            Time.deltaTime / interactionTime;
-
-        interactionProgress =
-            Mathf.Clamp01(interactionProgress);
-
-        if (progressCircle != null)
-        {
-            progressCircle.gameObject.SetActive(true);
-
-            progressCircle.fillAmount =
-                interactionProgress;
-        }
-
-        if (interactionProgress >= 1f)
-        {
-            OpenDoor();
-        }
-    }
-
-    private void ResetInteraction()
-    {
-        interactionProgress = 0f;
-
-        if (progressCircle != null)
-        {
-            progressCircle.fillAmount = 0f;
-            progressCircle.gameObject.SetActive(false);
+            if (countdownText != null)
+            {
+                countdownText.gameObject.SetActive(false);
+                countdownText.text = "";
+            }
         }
     }
 
     private void OpenDoor()
     {
-        doorOpened = true;
+        opened = true;
 
-        if (progressCircle != null)
+        if (countdownText != null)
         {
-            progressCircle.fillAmount = 1f;
-            progressCircle.gameObject.SetActive(false);
+            countdownText.gameObject.SetActive(false);
+            countdownText.text = "";
         }
 
-        if (doorCollider != null)
+        if (circle != null)
         {
-            doorCollider.enabled = false;
+            Vector3 rotation = circle.eulerAngles;
+            rotation.z = 90f;
+            circle.eulerAngles = rotation;
         }
+    }
 
-        if (doorVisual != null)
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.CompareTag("Player"))
         {
-            doorVisual.SetActive(false);
+            playerInside = true;
         }
+    }
 
-        Debug.Log("Door opened!");
+    private void OnTriggerExit2D(Collider2D other)
+    {
+        if (other.CompareTag("Player"))
+        {
+            playerInside = false;
+            timer = 0f;
+
+            if (countdownText != null)
+            {
+                countdownText.gameObject.SetActive(false);
+                countdownText.text = "";
+            }
+        }
     }
 }
